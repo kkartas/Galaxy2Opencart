@@ -1,0 +1,9 @@
+{% extends "Galaxy2Opencart/main.html" %}
+
+{% block content %}
+<h2>Products Import</h2>
+<form action="{% url 'products_view' %}" method="post">
+    {% csrf_token %}
+    <input type="submit" value="Import Products">
+</form>
+{% endblock %}

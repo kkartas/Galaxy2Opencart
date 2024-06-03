@@ -1,0 +1,48 @@
+
+/* Additional styles for Materialize adjustments */
+.nav-wrapper img {
+    margin-top: 5px; /* To align the image with the logo text */
+}
+
+/* Adjust console look */
+#consoleOutput {
+    border: 1px solid #e0e0e0;
+    padding: 10px;
+    background-color: #fafafa;
+    height: 300px;
+    overflow-y: auto;
+    font-family: monospace;
+    color: #333;
+}
+
+    #consoleOutput p {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    #consoleOutput .error-log {
+        color: red;
+    }
+
+    #consoleOutput .info-log {
+        color: blue;
+    }
+
+/* Adjust footer */
+.page-footer {
+    margin-top: 30px;
+    padding: 15px 0;
+    text-align: center;
+    background-color: #f7f7f7;
+    border-top: 1px solid #e0e0e0;
+    color: black;
+}
+/* Footer styles */
+footer {
+    margin-top: 30px;
+    padding: 15px 0;
+    text-align: center;
+    background-color: #f7f7f7;
+    border-top: 1px solid #e0e0e0;
+    color: black;
+}

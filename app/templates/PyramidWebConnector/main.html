@@ -1,0 +1,267 @@
+{% load static %}
+
+{% block content %}
+
+<!-- Add Materialize CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+<!-- Custom CSS -->
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Materialize JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+
+<header class="nav-wrapper grey lighten-3">
+    <div class="container">
+        <a href="#" class="brand-logo"></a>
+        <img src="{% static 'logo.png' %}" alt="Logo" class="right" style="height:60px;">
+    </div>
+</header>
+
+
+<script>
+    $(document).ready(function () {
+        let schedulerInterval;
+        let isSchedulerRunning = false;
+        // Initialize MaterializeCSS components
+        $('select').formSelect();
+
+        // Store scheduled tasks and intervals
+        const scheduledTasks = {};
+        const taskIntervals = {};
+
+        // Button Event Listeners
+        $('#scheduleTask').on('click', function (e) {
+            e.preventDefault();
+            const task = $('#taskSelect').val();
+            const intervalMinutes = parseInt($('#intervalMinutes').val());
+
+            if (!isNaN(intervalMinutes) && intervalMinutes > 0) {
+                // Store the task and interval
+                scheduledTasks[task] = intervalMinutes;
+
+                // Update the displayed scheduled tasks
+                updateScheduledTasksList();
+            }
+        });
+
+        $('#toggleScheduler').on('click', function (e) {
+            e.preventDefault();
+            if (isSchedulerRunning) {
+                stopScheduler();
+            } else {
+                startScheduler();
+            }
+        });
+
+        $('#scheduledTasksList').on('click', 'a.removeTask', function (e) {
+            e.preventDefault();
+            const task = $(this).data('task');
+            removeScheduledTask(task);
+        });
+
+        // Start Scheduler
+        function startScheduler() {
+            for (const task in scheduledTasks) {
+                const intervalMinutes = scheduledTasks[task];
+                const interval = setInterval(function () {
+                    // Perform the task
+                    ajaxCall(task, csrfToken);
+                }, intervalMinutes * 60000); // Convert minutes to milliseconds (1 minute = 60000 ms)
+                // Store the interval for later reference
+                taskIntervals[task] = interval;
+            }
+            isSchedulerRunning = true;
+            updateSchedulerStatus();
+        }
+
+        function stopScheduler() {
+            // Clear any existing scheduler intervals
+            for (const task in taskIntervals) {
+                clearInterval(taskIntervals[task]);
+            }
+            isSchedulerRunning = false;
+            updateSchedulerStatus();
+        }
+
+        function updateSchedulerStatus() {
+            const schedulerStatus = $('#schedulerStatus');
+            schedulerStatus.text(isSchedulerRunning ? 'Scheduler is running' : 'Scheduler is stopped');
+            // Update the button text
+            const toggleScheduler = $('#toggleScheduler');
+            toggleScheduler.text(isSchedulerRunning ? 'Stop Scheduler' : 'Start Scheduler');
+        }
+
+        function updateScheduledTasksList() {
+            const scheduledTasksList = $('#scheduledTasksList');
+            scheduledTasksList.empty();
+
+            for (const task in scheduledTasks) {
+                const intervalMinutes = scheduledTasks[task];
+                scheduledTasksList.append(`<li>${task} (Every ${intervalMinutes} minutes) <a href="#" class="removeTask" data-task="${task}">Remove</a></li>`);
+            }
+        }
+
+        function removeScheduledTask(task) {
+            // Stop the task by clearing its interval
+            if (taskIntervals[task]) {
+                clearInterval(taskIntervals[task]);
+                delete taskIntervals[task];
+            }
+            // Remove the task from the scheduled tasks list
+            delete scheduledTasks[task];
+            // Update the displayed scheduled tasks
+            updateScheduledTasksList();
+        }
+
+        // CSRF setup for AJAX
+        var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+
+        // Button Event Listeners
+        $('#runProductsImport').on('click', function (e) {
+            e.preventDefault();
+            ajaxCall('{% url "products_view" %}', csrfToken);
+        });
+
+        $('#runOrdersImport').on('click', function (e) {
+            e.preventDefault();
+            ajaxCall('{% url "orders_view" %}', csrfToken);
+        });
+
+        $('#runCategoriesImport').on('click', function (e) {
+            e.preventDefault();
+            ajaxCall('{% url "categories_view" %}', csrfToken);
+        });
+
+        $('#runImagesImport').on('click', function (e) {
+            e.preventDefault();
+            ajaxCall('{% url "image_view" %}', csrfToken);
+        });
+
+        $('#runBalanceSync').on('click', function (e) {
+            e.preventDefault();
+            ajaxCall('{% url "balance_view" %}', csrfToken);
+        });
+
+        $('#clearLogs').on('click', function (e) {
+            e.preventDefault();
+            ajaxCall('{% url "clear_logs" %}', csrfToken);
+            location.reload();
+        });
+
+        // Main AJAX Call Function
+        function ajaxCall(url, csrfToken) {
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: {
+                    csrfmiddlewaretoken: csrfToken
+                    // Add other fields if needed...
+                },
+                success: function (response) {
+                },
+                error: function (error) {
+                }
+            });
+        }
+
+        function appendToConsole(log) {
+            const consoleOutput = document.getElementById('consoleOutput');
+            const p = document.createElement('p');
+            p.textContent = `[${log.level} - ${log.module}] ${log.message}`;
+
+            if (log.level === "ERROR") {
+                p.className = "error-log";
+            } else if (log.level === "INFO") {
+                p.className = "info-log";
+            }
+
+            consoleOutput.appendChild(p);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        async function fetchLogs() {
+            const response = await fetch('/messages/');
+            const logs = await response.json();
+
+            // Clear the console before appending new logs
+            document.getElementById('consoleOutput').innerHTML = '';
+
+            logs.forEach(log => {
+                appendToConsole(log);
+            });
+        }
+
+        // Fetch logs every 5 seconds
+        setInterval(fetchLogs, 5000);
+    });
+</script>
+
+<main class="container">
+    <section class="section">
+        <h3>Galaxy2Opencart</h3>
+    </section>
+
+    {% csrf_token %}
+
+    <section class="section">
+        <div class="row">
+            <div class="col s3"><a id="runProductsImport" class="waves-effect waves-light btn">Import/Update Products</a></div>
+            <div class="col s2"><a id="runOrdersImport" class="waves-effect waves-light btn">Import Orders</a></div>
+            <div class="col s2"><a id="runCategoriesImport" class="waves-effect waves-light btn">Import Categories</a></div>
+            <div class="col s2"><a id="runImagesImport" class="waves-effect waves-light btn">Import Images</a></div>
+            <div class="col s2"><a id="runBalanceSync" class="waves-effect waves-light btn">Sync Item Balance</a></div>
+        </div>
+    </section>
+
+    <div id="consoleWindow" class="card">
+        <div class="card-content">
+            <div id="consoleOutput"></div>
+        </div>
+        <div class="card-action">
+            <a id="clearLogs" class="waves-effect waves-light btn red">Clear Logs</a>
+        </div>
+    </div>
+    <h5>Scheduler</h5>
+    <section class="section">
+        <div class="row">
+            <div class="input-field col s4">
+                <label for="taskSelect"></label>
+                <select id="taskSelect">
+                    <option value="" disabled selected>Choose a task</option>
+                    <option value="products/">Import/Update Products</option>
+                    <option value="orders/">Import Orders</option>
+                    <option value="categories/">Import Categories</option>
+                    <option value="images/">Import Images</option>
+                    <option value="balance/">Sync Item Balance</option>
+                </select>
+            </div>
+            <div class="input-field col s4">
+                <input type="number" id="intervalMinutes" min="1" placeholder="Enter interval in minutes">
+                <label>Interval (minutes)</label>
+            </div>
+            <div class="col s4">
+                <a id="scheduleTask" class="waves-effect waves-light btn">Schedule Task</a>
+            </div>
+        </div>
+    </section>
+    <section class="section">
+        <ul id="scheduledTasksList"></ul>
+    </section>
+    <section class="section">
+        <p id="schedulerStatus">Scheduler is not running</p>
+        <a id="toggleScheduler" class="waves-effect waves-light btn">Start Scheduler</a>
+    </section>
+    <h5>Settings</h5>
+    <section class="section">
+        <a href="{% url 'answer_form_view' %}" class="waves-effect waves-light btn">Set Answers</a>
+    </section>
+</main>
+
+<footer class="page-footer white lighten-3">
+    <div class="container">
+        <p>&copy; 2023 <a href="https://kkartas.gr/">Kyriakos Kartas</a></p><p> v1.0.0</p>
+    </div>
+</footer>
+
+{% endblock %}

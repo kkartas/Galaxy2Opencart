@@ -1,0 +1,8 @@
+{% extends "Galaxy2Opencart/main.html" %}
+
+{% block content %}
+<form action="{% url 'clear_logs' %}" method="post">
+    {% csrf_token %}
+    <input type="submit" value="Clear Logs">
+</form>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "Galaxy2Opencart/main.html" %}
+
+{% block content %}
+<h2>Balance Import</h2>
+<form action="{% url 'balance_view' %}" method="post">
+    {% csrf_token %}
+    <input type="submit" value="Sync Balance">
+</form>
+{% endblock %}
